@@ -189,7 +189,6 @@ package biz.logicminds.restclientlib
 					iresponder = new AsyncResponder(onResult, onFault, asyncToken);
 					asyncToken = this.conn.send();
 					asyncToken.addResponder(iresponder);
-					return new AsyncToken();
 					break;
 				case RestClient.METHOD_POST:
 					this.conn.url = url;

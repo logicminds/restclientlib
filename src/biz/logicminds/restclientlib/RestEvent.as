@@ -11,7 +11,7 @@ package biz.logicminds.restclientlib
 		private var _statuscode:int;
 		private var _message:String;
 		
-		public function RestEvent(type:String, desc:String=null, data:*=null,  statuscode:int=-1, message:String=null, bubbles:Boolean=false, cancelable:Boolean=false)
+		public function RestEvent(type:String, desc:String=null, data:*=null,  statuscode:int=-1, message:String=null, token:AsyncToken,bubbles:Boolean=false, cancelable:Boolean=false)
 		{
 			super(type, bubbles, cancelable);
 			_data = data;
