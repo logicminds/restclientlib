@@ -9,6 +9,7 @@ package biz.logicminds.restclientlib
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
 	import flash.net.URLRequestHeader;
+	
 	import mx.rpc.AsyncResponder;
 	import mx.rpc.AsyncToken;
 	import mx.rpc.IResponder;
@@ -215,21 +216,36 @@ package biz.logicminds.restclientlib
 		/// RESULTS EVENTS BELOW
 		private function onResult(event:ResultEvent,token:Object=null):void
 		{
+			trace("Reached onResult handler");
 			var rawData:String = String(event.result);
-			this.dispatchEvent(new RestEvent(RestEvent.RESULT, RestClient.SUCCESS, rawData,event.statusCode));
+			event.token.dispatchEvent(new RestEvent(RestEvent.RESULT, RestClient.SUCCESS, rawData,event.statusCode,null,event.token));
 		
 		}
 		private function onFault(event:FaultEvent, token:Object=null):void{
 			// Lets try and parse the error to be more meaningful
+			trace("Reached onfault handler");
 			var error:String;
 			switch (event.statusCode){
 				case 401:
 					error = event.statusCode + ": Access denied,\n check credentials";
-					this.dispatchEvent(new RestEvent(RestEvent.RESULT, RestClient.ACCESS_DENIED, null, event.statusCode,  event.fault.faultString));
+					event.token.dispatchEvent(new RestEvent(RestEvent.RESULT, RestClient.ACCESS_DENIED, null, event.statusCode,  event.fault.faultString,event.token));
+					break;
+				//redirected but still ok, difficult to determine if its ok
+				case 302:
+					var rawData:String = String(event.fault);
+					event.token.dispatchEvent(new RestEvent(RestEvent.RESULT, RestClient.SUCCESS, rawData,event.statusCode,null,event.token));
+				case 201:
+					// item created
+					event.token.dispatchEvent(new RestEvent(RestEvent.RESULT, RestClient.SUCCESS, null,event.statusCode,null,event.token));
+					break;
+				case 422:
+					//already exists
+					trace(event.message.body);
+					event.token.dispatchEvent(new RestEvent(RestEvent.RESULT, RestClient.FAILURE,null,event.statusCode,event.message.body.toString(),event.token));
 					break;
 				default:
 					error = event.statusCode + ": " +event.fault.faultString;
-					this.dispatchEvent(new RestEvent(RestEvent.RESULT, RestClient.FAILURE,null, event.statusCode,  event.fault.faultString));
+					event.token.dispatchEvent(new RestEvent(RestEvent.RESULT, RestClient.FAILURE,null, event.statusCode,  event.fault.faultString, event.token));
 					break;
 			}
 		
@@ -245,28 +261,33 @@ package biz.logicminds.restclientlib
 		
 		private function handleIOError ( event:IOErrorEvent ):void
 		{
-			trace ( "Load failed: IO error: " + event.text );
+			trace ( "Reached handleIOError : Load failed: IO error: " + event.text );
+			this.dispatchEvent(new RestEvent(RestEvent.IOERROR,null,event.target.data));
+			// event.target.data  --> this contains the json data
 			//this.dispatchEvent(new RestEvent(RestEvent.RESULT, RestClient.FAILURE,null, event.statusCode,  event.fault.faultString));
 
 		}
 		private function handleHttpStatus ( event:HTTPStatusEvent ):void
 		{
+			trace("reached handlehttpstatus handler");
 			switch (event.status){
 				case 200:
 					// Ok, everything went good
 					trace("200, everything went good with http method");
 					this.dispatchEvent(new Event("SuccessfulChange"));
 					this.dispatchEvent(new RestEvent(RestEvent.RESULT, RestClient.SUCCESS, null,event.status));
-
 					break;
-				
+						
 				default:
+					this.dispatchEvent(new RestEvent(RestEvent.RESULT, RestClient.SUCCESS,null,event.status));
+
 					
 			}
 			trace ( "Load Status Result: HTTP Status = " + event.status );
 		}
 		private function handleHttpResponseStatus (event:HTTPStatusEvent):void
 		{
+
 			trace ( "Load Response Status: HTTP Status = " + event.toString() );
 		}
 		private function handleSecurityError ( event:SecurityErrorEvent ):void
