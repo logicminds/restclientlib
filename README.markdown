@@ -1,4 +1,7 @@
 # Actionscript 3 Rest Client library
+## NOTE
+
+I no longer maintain this project.  You should consider forking.
 
 ## Summary
 This library is a wrapper class for httpservice and urlloader objects that was created to get around the problem with the flash player not being able to use PUT, DELETE requests with rest services.
